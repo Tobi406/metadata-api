@@ -6,14 +6,63 @@ const data = {
   version: null,
   downloads: {},
   extensions: {},
+  wiki: {},
   discordUserCount: null,
   patreonCount: null,
 };
+const wikiPages = [
+  'Advanced-Setup',
+  'Argument-based-command-permissions',
+  'Bulk-Editing',
+  'Command-Usage',
+  'Configuration',
+  'Context',
+  'Credits',
+  'Default-Groups',
+  'Developer-API-Usage',
+  'Developer-API',
+  'Extensions',
+  'External-connections',
+  'FAQ',
+  'GM-&-PEX-Command-Equivalents',
+  'General-Commands',
+  'Group-Commands',
+  'Home',
+  'Installation',
+  'Locale-and-Translations',
+  'Log-Commands',
+  'Meta-Commands',
+  'Migration',
+  'Network-Installation',
+  'Parent-Commands',
+  'Permission-Commands',
+  'Permissions',
+  'Placeholders',
+  'Prefix-&-Suffix-Stacking',
+  'Prefixes,-Suffixes-&-Meta',
+  'Self-hosting-the-web-interfaces',
+  'Storage-system-errors',
+  'Storage-types',
+  'Switching-storage-types',
+  'Syncing-data-between-servers',
+  'Track-Commands',
+  'Tracks',
+  'Upgrading-from-v4-to-v5',
+  'Usage',
+  'User-Commands',
+  'Verbose',
+  'Web-Editor',
+  'Weight',
+  'Why-LuckPerms',
+  '_Sidebar',
+];
 
 router.get('/all', (req, res) => { res.send(data) });
 router.get('/version', (req, res) => { res.send({ version: data.version }) });
 router.get('/downloads', (req, res) => { res.send(data.downloads) });
 router.get('/extensions', (req, res) => { res.send(data.extensions) });
+router.get('/wiki', (req, res) => { res.send({ pages: data.wiki }) });
+router.get('/wiki/:page', (req, res) => { res.send({page: data.wiki[req.params['page']]}) });
 router.get('/discord-count', (req, res) => { res.send({ discordUserCount: data.discordUserCount }) });
 router.get('/patreon-count', (req, res) => { res.send({ patreonCount: data.patreonCount }) });
 
@@ -25,12 +74,16 @@ getData().then(() => {
     await getDiscordUserCount();
     await getPatreonCount();
   }, 300000);
+  setInterval(async () => {
+    await getWikiData();
+  }, 7200000);
 });
 
 async function getData() {
   await getJenkinsData();
   await getDiscordUserCount();
   await getPatreonCount();
+  await getWikiData();
 }
 
 async function getJenkinsData() {
@@ -63,6 +116,16 @@ async function getExtensionData(extensionId) {
     extensionData.data.artifacts.forEach((artifact) => {
       const extension = `${extensionData.data.url.split('/')[4]}`;
       data.extensions[extension] = `${extensionData.data.url}artifact/${artifact.relativePath}`;
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function getWikiData() {
+  try {
+    wikiPages.forEach(async (page) => {
+      data.wiki[page] = (await axios.get(`https://raw.githubusercontent.com/LuckPerms/wiki/master/${page}.md`)).data;
     });
   } catch (error) {
     console.error(error);
